@@ -6,14 +6,13 @@ unsafe extern "C" {
     fn rt_get_payload(ptr: *const u8, offset: i32) -> i32;
 }
 
-/// Universal Enum - arena-allocated, no GC, no Drop
-pub struct UniversalEnum<'a> {
+pub struct Enum<'a> {
     ptr: *mut u8,
     name: &'static str,
     _marker: std::marker::PhantomData<&'a ()>,
 }
 
-impl<'a> UniversalEnum<'a> {
+impl<'a> Enum<'a> {
     fn new(arena: &'a Arena, name: &'static str, tag: u32, payload: &[i32]) -> Self {
         let ptr = arena.alloc_enum(tag, payload);
         Self {
@@ -33,15 +32,15 @@ impl<'a> UniversalEnum<'a> {
 }
 
 fn main() {
-    println!("\x1b[1m--- Universal Enum Engine (Arena) ---\x1b[0m\n");
+    println!("\x1b[1m--- Enum (Arena) ---\x1b[0m\n");
 
     let arena = Arena::new(1024 * 1024);
 
     {
-        let house = UniversalEnum::new(&arena, "Home::House", 0, &[4, 2500]);
-        let apt = UniversalEnum::new(&arena, "Home::Apartment", 1, &[12, 404]);
-        let card = UniversalEnum::new(&arena, "Payment::Card", 0, &[9999]);
-        let color = UniversalEnum::new(&arena, "Color::Custom", 2, &[255, 128, 0]);
+        let house = Enum::new(&arena, "Home::House", 0, &[4, 2500]);
+        let apt = Enum::new(&arena, "Home::Apartment", 1, &[12, 404]);
+        let card = Enum::new(&arena, "Payment::Card", 0, &[9999]);
+        let color = Enum::new(&arena, "Color::Custom", 2, &[255, 128, 0]);
 
         println!(
             "\x1b[32m[AOT]\x1b[0m {} | Tag: {} | Rooms: {} | SqFt: {}",

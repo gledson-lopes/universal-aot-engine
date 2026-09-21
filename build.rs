@@ -1,5 +1,8 @@
 use cranelift::prelude::*;
 use cranelift_codegen::Context;
+// ✅ Use MemFlagsData directly instead of MemFlags
+use cranelift::codegen::ir::MemFlagsData;
+use cranelift_codegen::ir::immediates::Offset32;
 use cranelift_module::{Linkage, Module};
 use cranelift_object::{ObjectBuilder, ObjectModule};
 use std::fs::File;
@@ -8,10 +11,14 @@ use std::path::PathBuf;
 
 fn main() {
     let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
+    std::fs::create_dir_all(&out_dir).unwrap();
+
     let isa_builder = cranelift_native::builder().expect("host machine not supported");
     let isa = isa_builder
         .finish(settings::Flags::new(settings::builder()))
         .unwrap();
+
+    let target_config = isa.frontend_config();
 
     let obj_builder = ObjectBuilder::new(
         isa,
@@ -39,11 +46,12 @@ fn main() {
         builder.switch_to_block(block);
 
         let ptr = builder.block_params(block)[0];
-        let tag = builder.ins().load(types::I32, MemFlags::new(), ptr, 0);
 
+        // ✅ FIX 1: Used MemFlagsData::new()
+        let tag = builder.ins().load(types::I32, MemFlagsData::new(), ptr, 0);
         builder.ins().return_(&[tag]);
         builder.seal_block(block);
-        builder.finalize();
+        builder.finalize(target_config);
     }
     module.define_function(func_tag, &mut ctx_tag).unwrap();
 
@@ -68,22 +76,28 @@ fn main() {
         let ptr = params[0];
         let offset = params[1];
 
-        let payload_base = builder.ins().iadd_imm(ptr, 4);
+        let payload_base = builder.ins().iadd_imm_s(ptr, 4);
         let off64 = builder.ins().uextend(types::I64, offset);
         let addr = builder.ins().iadd(payload_base, off64);
-        let val = builder.ins().load(types::I32, MemFlags::new(), addr, 0);
+
+        // ✅ FIX 2: Used MemFlagsData::new() (which maps seamlessly into defaults)
+        let val = builder
+            .ins()
+            .load(types::I32, MemFlagsData::new(), addr, Offset32::new(0));
 
         builder.ins().return_(&[val]);
         builder.seal_block(block);
-        builder.finalize();
+        builder.finalize(target_config);
     }
     module.define_function(func_pay, &mut ctx_pay).unwrap();
 
     let product = module.finish();
+    let object_bytes = product.object.write().unwrap();
+
     let obj_path = out_dir.join("univ_engine.o");
     File::create(&obj_path)
         .unwrap()
-        .write_all(&product.emit().unwrap())
+        .write_all(&object_bytes)
         .unwrap();
 
     println!("cargo:rustc-link-search=native={}", out_dir.display());
