@@ -74,6 +74,4 @@ fn main() {
 
     println!("\n--- Scope End (arena still valid) ---");
     drop(arena);
-    println!("\x1b[31m[Arena]\x1b[0m All memory freed at once");
-    println!("\n\x1b[34mExecution Finished.\x1b[0m");
 }

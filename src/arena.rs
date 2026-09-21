@@ -52,8 +52,16 @@ impl Arena {
 
 impl Drop for Arena {
     fn drop(&mut self) {
-        for (ptr, layout) in &self.chunks {
-            unsafe { dealloc(ptr.as_ptr(), *layout) };
+        // 📢 Visual confirmation showing the number of chunks being reallocated/freed
+        println!(
+            "\x1b[31m[Arena]\x1b[0m Freeing {} backing chunk(s) back to the system memory allocator...",
+            self.chunks.len()
+        );
+
+        for (ptr, layout) in self.chunks.drain(..) {
+            unsafe {
+                dealloc(ptr.as_ptr(), layout);
+            }
         }
     }
 }
