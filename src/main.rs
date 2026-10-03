@@ -1,4 +1,3 @@
-
 mod arena;
 use arena::Arena;
 
@@ -10,17 +9,12 @@ unsafe extern "C" {
 pub struct Enum {
     ptr: *mut u8,
     name: &'static str,
-
 }
 
 impl Enum {
-    fn new(arena: & Arena, name: &'static str, tag: u32, payload: &[i32]) -> Self {
+    fn new(arena: &Arena, name: &'static str, tag: u32, payload: &[i32]) -> Self {
         let ptr = arena.alloc_enum(tag, payload);
-        Self {
-            ptr,
-            name,
-
-        }
+        Self { ptr, name }
     }
 
     fn tag(&self) -> i32 {
