@@ -1,3 +1,4 @@
+
 mod arena;
 use arena::Arena;
 
@@ -6,19 +7,19 @@ unsafe extern "C" {
     fn rt_get_payload(ptr: *const u8, offset: i32) -> i32;
 }
 
-pub struct Enum<'a> {
+pub struct Enum {
     ptr: *mut u8,
     name: &'static str,
-    _marker: std::marker::PhantomData<&'a ()>,
+
 }
 
-impl<'a> Enum<'a> {
-    fn new(arena: &'a Arena, name: &'static str, tag: u32, payload: &[i32]) -> Self {
+impl Enum {
+    fn new(arena: & Arena, name: &'static str, tag: u32, payload: &[i32]) -> Self {
         let ptr = arena.alloc_enum(tag, payload);
         Self {
             ptr,
             name,
-            _marker: std::marker::PhantomData,
+
         }
     }
 

@@ -94,7 +94,7 @@ fn main() {
     let product = module.finish();
     let object_bytes = product.object.write().unwrap();
 
-    let obj_path = out_dir.join("univ_engine.o");
+    let obj_path = out_dir.join("enum.o");
     File::create(&obj_path)
         .unwrap()
         .write_all(&object_bytes)

@@ -1,0 +1,26 @@
+{
+  "name": "Universal AOT Engine Zed Dev Environment",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "target": "dev",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspaces/universal-aot-engine",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/universal-aot-engine,type=bind",
+  "containerEnv": {
+    "CARGO_HOME": "/usr/local/cargo",
+    "RUSTUP_HOME": "/usr/local/rustup",
+    "PATH": "/usr/local/cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  },
+  "remoteEnv": {
+    "CARGO_HOME": "/usr/local/cargo",
+    "RUSTUP_HOME": "/usr/local/rustup",
+    "PATH": "/usr/local/cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  },
+  "customizations": {
+    "zed": {
+      "extensions": ["rust"]
+    }
+  },
+  "remoteUser": "root"
+}
