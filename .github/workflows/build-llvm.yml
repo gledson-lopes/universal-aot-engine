@@ -1,4 +1,4 @@
-name: Build LLVM 22 on macOS 14
+name: Build LLVM 23.1.2 on macOS 14
 
 on:
   workflow_dispatch:
@@ -9,22 +9,25 @@ jobs:
   build:
     runs-on: macos-14
     
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Install Dependencies
         run: |
-          brew install ninja cmake git
+          brew install ninja cmake git zstd
 
       - name: Set up Environment Variables
         run: |
-          echo "INSTALL_PREFIX=$HOME/llvm-22" >> $GITHUB_ENV
+          echo "INSTALL_PREFIX=$HOME/llvm-23.1.2" >> $GITHUB_ENV
           echo "SRC_DIR=$HOME/llvm-project-src" >> $GITHUB_ENV
 
-      - name: Clone LLVM Monorepo
+      - name: Clone LLVM 23.1.2 Tag
         run: |
-          git clone --depth 1 https://github.com/llvm/llvm-project.git "$HOME/llvm-project-src"
+          git clone --depth 1 --branch llvmorg-23.1.2 https://github.com/llvm/llvm-project.git "$HOME/llvm-project-src"
 
       - name: Configure CMake
         run: |
@@ -32,7 +35,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DLLVM_ENABLE_PROJECTS="clang;lld" \
             -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind;compiler-rt" \
-            -DCMAKE_INSTALL_PREFIX="$HOME/llvm-22" \
+            -DCMAKE_INSTALL_PREFIX="$HOME/llvm-23.1.2" \
             -DLIBCXX_ENABLE_EXPERIMENTAL_UNSTABLE_ITHIS_CAN_BREAK_YOUR_BUILD=ON \
             -DLIBCXX_INSTALL_HEADERS=ON
 
@@ -42,10 +45,20 @@ jobs:
 
       - name: Archive LLVM Build
         run: |
-          tar -czf llvm-22-macos14-bin.tar.gz -C "$HOME" llvm-22
+          tar -czf llvm-23.1.2-macos14-bin.tar.gz -C "$HOME" llvm-23.1.2
 
       - name: Upload Binary Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: llvm-22-macos14-binary
-          path: llvm-22-macos14-bin.tar.gz
+          name: llvm-23.1.2-macos14-binary
+          path: llvm-23.1.2-macos14-bin.tar.gz
+
+      - name: Release LLVM Binary
+        uses: softprops/action-gh-release@v2
+        with:
+          files: llvm-23.1.2-macos14-bin.tar.gz
+          tag_name: llvm-23.1.2-macos14-${{ github.run_id }}
+          name: LLVM 23.1.2 macOS 14 Build
+          body: Automated upstream LLVM 23.1.2 build with C++26 libc++ and libunwind support.
+          draft: false
+          prerelease: false
