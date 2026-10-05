@@ -40,9 +40,10 @@ jobs:
             -DLIBCXX_ENABLE_EXPERIMENTAL_UNSTABLE_ITHIS_CAN_BREAK_YOUR_BUILD=ON \
             -DLIBCXX_INSTALL_HEADERS=ON
 
-      - name: Build and Install LLVM
+      - name: Build and Install LLVM and Runtimes
         run: |
           ninja -C "$HOME/llvm-project-src/build" install
+          ninja -C "$HOME/llvm-project-src/build" install-runtimes
 
       - name: Archive LLVM Build
         run: |
