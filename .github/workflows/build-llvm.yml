@@ -29,12 +29,9 @@ jobs:
         run: |
           git clone --depth 1 --branch llvmorg-23.1.2 https://github.com/llvm/llvm-project.git "$HOME/llvm-project-src"
 
-      - name: Configure CMake (Self-Contained Root)
+      - name: Configure CMake (LLVM Subdirectory)
         run: |
-          echo "Checking contents of clone directory:"
-          ls -la "$HOME/llvm-project-src"
-          
-          cmake -B "$HOME/llvm-project-src/build" -S "$HOME/llvm-project-src" -G Ninja \
+          cmake -B "$HOME/llvm-project-src/build" -S "$HOME/llvm-project-src/llvm" -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DLLVM_ENABLE_PROJECTS="clang;lld" \
             -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind;compiler-rt" \
@@ -46,6 +43,7 @@ jobs:
       - name: Build and Install LLVM and Runtimes
         run: |
           ninja -C "$HOME/llvm-project-src/build" install
+          ninja -C "$HOME/llvm-project-src/build" runtimes
           ninja -C "$HOME/llvm-project-src/build" install-runtimes
 
       - name: Archive LLVM Build
