@@ -31,6 +31,9 @@ jobs:
 
       - name: Configure CMake (Self-Contained Root)
         run: |
+          echo "Checking contents of clone directory:"
+          ls -la "$HOME/llvm-project-src"
+          
           cmake -B "$HOME/llvm-project-src/build" -S "$HOME/llvm-project-src" -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DLLVM_ENABLE_PROJECTS="clang;lld" \
