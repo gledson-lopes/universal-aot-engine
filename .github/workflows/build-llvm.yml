@@ -1,4 +1,4 @@
-name: Build LLVM 23.1.2 on macOS 14
+name: Build LLVM 24 on macOS 14
 
 on:
   workflow_dispatch:
@@ -22,12 +22,12 @@ jobs:
 
       - name: Set up Environment Variables
         run: |
-          echo "INSTALL_PREFIX=$HOME/llvm-23.1.2" >> $GITHUB_ENV
+          echo "INSTALL_PREFIX=$HOME/llvm-24" >> $GITHUB_ENV
           echo "SRC_DIR=$HOME/llvm-project-src" >> $GITHUB_ENV
 
-      - name: Clone LLVM 23.1.2 Tag
+      - name: Clone LLVM 24 Branch
         run: |
-          git clone --depth 1 --branch llvmorg-23.1.2 https://github.com/llvm/llvm-project.git "$HOME/llvm-project-src"
+          git clone --depth 1 --branch llvmorg-24-init https://github.com/llvm/llvm-project.git "$HOME/llvm-project-src"
 
       - name: Configure CMake (Runtimes Mode)
         run: |
@@ -35,7 +35,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DLLVM_ENABLE_PROJECTS="clang;lld" \
             -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind;compiler-rt" \
-            -DCMAKE_INSTALL_PREFIX="$HOME/llvm-23.1.2" \
+            -DCMAKE_INSTALL_PREFIX="$HOME/llvm-24" \
             -DLLVM_ENABLE_ZSTD=OFF \
             -DRUNTIMES_CMAKE_ARGS="\
               -DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY=ON \
@@ -51,20 +51,20 @@ jobs:
 
       - name: Archive LLVM Build
         run: |
-          tar -czf llvm-23.1.2-macos14-bin.tar.gz -C "$HOME" llvm-23.1.2
+          tar -czf llvm-24-macos14-bin.tar.gz -C "$HOME" llvm-24
 
       - name: Upload Binary Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: llvm-23.1.2-macos14-binary
-          path: llvm-23.1.2-macos14-bin.tar.gz
+          name: llvm-24-macos14-binary
+          path: llvm-24-macos14-bin.tar.gz
 
       - name: Release LLVM Binary
         uses: softprops/action-gh-release@v2
         with:
-          files: llvm-23.1.2-macos14-bin.tar.gz
-          tag_name: llvm-23.1.2-macos14-${{ github.run_id }}
-          name: LLVM 23.1.2 macOS 14 Build
-          body: Self-contained upstream LLVM 23.1.2 build with C++26 libc++ and generator support.
+          files: llvm-24-macos14-bin.tar.gz
+          tag_name: llvm-24-${{ github.run_id }}
+          name: LLVM 24 macOS 14 Build
+          body: Upstream LLVM 24 build with stable C++26 libc++ and generator support.
           draft: false
           prerelease: false
