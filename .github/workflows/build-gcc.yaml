@@ -45,6 +45,7 @@ jobs:
             --prefix="$INSTALL_PREFIX" \
             --enable-languages=c,c++ \
             --disable-multilib \
+            --disable-bootstrap \
             --with-gmp=$(brew --prefix gmp) \
             --with-mpfr=$(brew --prefix mpfr) \
             --with-mpc=$(brew --prefix libmpc) \
@@ -59,6 +60,7 @@ jobs:
         run: |
           "$INSTALL_PREFIX/bin/gcc" --version
           "$INSTALL_PREFIX/bin/g++" --version
+          test -f "$INSTALL_PREFIX/include/c++/16.2.0/generator" && echo "OK: <generator> present"
 
       - name: Archive GCC Build
         run: |
@@ -77,6 +79,6 @@ jobs:
           files: gcc-16.2-macos14-bin.tar.gz
           tag_name: gcc-16.2-${{ github.run_id }}
           name: GCC 16.2 macOS 14 Build
-          body: Upstream GCC 16.2 build for macOS 14.
+          body: Upstream GCC 16.2 build for macOS 14 with C++23/C++26 std::generator support.
           draft: false
           prerelease: true
