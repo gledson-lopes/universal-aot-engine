@@ -1,4 +1,4 @@
-name: Build GCC 16 via Homebrew Formula on macOS 14
+name: Install and Package GCC 16 via Homebrew Bottle
 
 on:
   workflow_dispatch:
@@ -19,64 +19,30 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install Build Prerequisites via Homebrew
+      - name: Install GCC via Homebrew Bottle
         run: |
           brew update
-          brew install gmp isl libmpc mpfr zstd make jq
-
-      - name: Download GCC 16.2 Source & Darwin Patch
-        run: |
-          mkdir -p src Patches/gcc
-          curl -L "https://ftp.gnu.org/gnu/gcc/gcc-16.2.0/gcc-16.2.0.tar.xz" -o src/gcc.tar.xz
-          tar -xf src/gcc.tar.xz -C src --strip-components=1
+          # Fetch and install the precompiled binary bottle directly
+          brew install gcc
           
-          # Download official Darwin/Apple Silicon patch referenced by Homebrew formula
-          curl -L "https://raw.githubusercontent.com/iains/gcc-16-branch/master/gcc-16.2.0.diff" -o Patches/gcc/gcc-16.2.0.diff
-
-      - name: Configure and Compile GCC via Homebrew Formula Specs
-        run: |
-          cd src
+          # Locate Homebrew's Cellar path dynamically
+          GCC_CELLAR_PATH="$(brew --cellar gcc)/$(brew info --json gcc | jq -r '.[0].installed[0].version')"
+          echo "Found GCC at: $GCC_CELLAR_PATH"
           
-          # Apply Darwin maintainer patches for macOS/Apple Silicon compatibility
-          patch -p1 < ../Patches/gcc/gcc-16.2.0.diff
-
-          mkdir build && cd build
+          # Stage into our distribution prefix directory
+          mkdir -p "$INSTALL_PREFIX"
+          cp -R "$GCC_CELLAR_PATH/"* "$INSTALL_PREFIX/"
           
-          export PATH="$(brew --prefix make)/libexec/gnubin:$PATH"
-          export LD=""
-
-          ../configure \
-            --prefix="$INSTALL_PREFIX" \
-            --libdir="$INSTALL_PREFIX/lib/gcc/current" \
-            --disable-nls \
-            --enable-checking=release \
-            --with-gcc-major-version-only \
-            --enable-languages=c,c++,objc,obj-c++,fortran \
-            --program-suffix=-16 \
-            --with-gmp=$(brew --prefix gmp) \
-            --with-mpfr=$(brew --prefix mpfr) \
-            --with-mpc=$(brew --prefix libmpc) \
-            --with-isl=$(brew --prefix isl) \
-            --with-zstd=$(brew --prefix zstd) \
-            --with-pkgversion="Homebrew GCC 16.2.0" \
-            --with-system-zlib \
-            --build=aarch64-apple-darwin$(uname -r | cut -d. -f1) \
-            --with-sysroot=$(xcrun --show-sdk-path)
-
-          gmake -j$(sysctl -n hw.ncpu) BOOT_LDFLAGS=-Wl,-headerpad_max_install_names LDFLAGS_FOR_TARGET=-Wl,-headerpad_max_install_names
-          gmake install
-
-          # Setup versioned include directory structure
-          cd "$INSTALL_PREFIX"
-          mkdir -p lib/gcc/16
-          ln -s ../current/* lib/gcc/16/ 2>/dev/null || true
-
-          # Create unversioned symlinks for convenience
-          cd bin
-          if [ -f gcc-16 ]; then
-            ln -sf gcc-16 gcc
-            ln -sf g++-16 g++
-          fi
+          # Create standard unversioned symlinks for gcc/g++
+          cd "$INSTALL_PREFIX/bin"
+          for bin in gcc-*; do
+            if [ -x "$bin" ] && [[ "$bin" =~ ^gcc-[0-9]+$ ]]; then
+              version="${bin#gcc-}"
+              ln -sf "gcc-$version" gcc
+              ln -sf "g++-$version" g++
+              break
+            fi
+          done
 
       - name: Verify GCC Installation and <generator> Header
         run: |
@@ -84,7 +50,7 @@ jobs:
           gcc --version
           g++ --version
           
-          # Check for C++23/C++26 <generator> header in libstdc++
+          # Locate standard library headers including <generator>
           find "$INSTALL_PREFIX" -name "generator"
 
       - name: Archive GCC Build
@@ -103,7 +69,7 @@ jobs:
         with:
           files: gcc-16.2-macos14-bin.tar.gz
           tag_name: gcc-16.2-${{ github.run_id }}
-          name: GCC 16.2 macOS 14 Formula Build
-          body: Fully compiled GCC 16.2 toolchain for macOS 14 using Homebrew's precise formula arguments and Darwin patches.
+          name: GCC 16.2 macOS 14 Bottle Build
+          body: Official precompiled Homebrew bottle packaging of GCC 16 for macOS 14.
           draft: false
           prerelease: true
