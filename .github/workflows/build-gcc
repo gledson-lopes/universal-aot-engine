@@ -1,0 +1,77 @@
+name: Build GCC 16.2 on macOS 14
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+env:
+  INSTALL_PREFIX: ${{ github.workspace }}/gcc-16.2
+  SRC_DIR: ${{ github.workspace }}/gcc-src
+
+jobs:
+  build:
+    runs-on: macos-14
+    
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          brew update
+          brew install gmp mpfr libmpc isl
+          df -h
+
+      - name: Download and Extract GCC 16.2
+        run: |
+          mkdir -p "$SRC_DIR"
+          curl -L https://ftp.gnu.org/gnu/gcc/gcc-16.2.0/gcc-16.2.0.tar.xz -o gcc.tar.xz
+          tar -xf gcc.tar.xz -C "$SRC_DIR" --strip-components=1
+
+      - name: Configure GCC
+        run: |
+          mkdir -p "$SRC_DIR/build"
+          cd "$SRC_DIR/build"
+          ../configure \
+            --prefix="$INSTALL_PREFIX" \
+            --enable-languages=c,c++ \
+            --disable-multilib \
+            --with-gmp=$(brew --prefix gmp) \
+            --with-mpfr=$(brew --prefix mpfr) \
+            --with-mpc=$(brew --prefix mpc) \
+            --with-isl=$(brew --prefix isl)
+
+      - name: Build and Install GCC
+        run: |
+          make -C "$SRC_DIR/build" -j$(sysctl -n hw.ncpu)
+          make -C "$SRC_DIR/build" install
+
+      - name: Verify GCC Installation
+        run: |
+          "$INSTALL_PREFIX/bin/gcc" --version
+          "$INSTALL_PREFIX/bin/g++" --version
+
+      - name: Archive GCC Build
+        run: |
+          tar -czf gcc-16.2-macos14-bin.tar.gz -C "$(dirname "$INSTALL_PREFIX")" gcc-16.2
+
+      - name: Upload Binary Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gcc-16.2-macos14-binary
+          path: gcc-16.2-macos14-bin.tar.gz
+
+      - name: Release GCC Binary
+        if: github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: gcc-16.2-macos14-bin.tar.gz
+          tag_name: gcc-16.2-${{ github.run_id }}
+          name: GCC 16.2 macOS 14 Build
+          body: Upstream GCC 16.2 build for macOS 14.
+          draft: false
+          prerelease: true
