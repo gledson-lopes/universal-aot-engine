@@ -32,6 +32,11 @@ jobs:
           curl -L https://ftp.gnu.org/gnu/gcc/gcc-16.2.0/gcc-16.2.0.tar.xz -o gcc.tar.xz
           tar -xf gcc.tar.xz -C "$SRC_DIR" --strip-components=1
 
+      - name: Download Prerequisites Bundle
+        run: |
+          cd "$SRC_DIR"
+          ./contrib/download_prerequisites
+
       - name: Configure GCC
         run: |
           mkdir -p "$SRC_DIR/build"
