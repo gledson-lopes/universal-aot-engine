@@ -42,7 +42,7 @@ jobs:
             --disable-multilib \
             --with-gmp=$(brew --prefix gmp) \
             --with-mpfr=$(brew --prefix mpfr) \
-            --with-mpc=$(brew --prefix mpc) \
+            --with-mpc=$(brew --prefix libmpc) \
             --with-isl=$(brew --prefix isl)
 
       - name: Build and Install GCC
